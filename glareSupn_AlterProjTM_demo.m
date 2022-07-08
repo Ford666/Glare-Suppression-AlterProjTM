@@ -6,6 +6,7 @@
 
 close all
 
+
 %% Parameters
 N = 64; %size of phase mask 
 M = 160; %size of speckle field
