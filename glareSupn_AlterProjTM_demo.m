@@ -16,7 +16,7 @@ constrNum = 2; %two speckle-domain constraints (ER and HIO)
 gamma = 0.8; %feedback coefficient of HIO
 gpuFlag = 1; %use GPU or not
 
-if ~exist('TM', 'var'); TM = generate_tm(M^2, N^2, 0); end
+if ~exist('TM', 'var'); TM = generate_tm(M^2, N^2); end
 if ~gpuFlag && ~exist('TM_inv', 'var'); TM_inv = Tikinv(TM); end
 if gpuFlag && ~exist('TM_inv_gpu', 'var')
     TM_gpu = gpuArray(TM); 
