@@ -20,12 +20,10 @@ function TM = generate_tm(M, N)
     
     % Fourier transform to go in the object space with zero padding 
     TM = zeros(M, N,  'single');
-    [Y, X] = meshgrid(1:sqrt(M), 1:sqrt(M));
-    mask = ((X - sqrt(M)/2).^2 + (Y - sqrt(M)/2).^2) < (sqrt(M)/2)^2;
 
     for j = 1:N
         Temp = fft2(fftshift(padarray(bruit(:, :, j), ...
-            [sqrt(M)/2 - n_grains/2, sqrt(M)/2 - n_grains/2]))).* mask; 
+            [sqrt(M)/2 - n_grains/2, sqrt(M)/2 - n_grains/2]))); 
         TM(:, j) = 1/M * Temp(:); 
     end
 end
