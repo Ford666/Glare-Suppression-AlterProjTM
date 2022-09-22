@@ -12,7 +12,7 @@ M = 160; %size of speckle field
 L =  30; %side length of target square region
 iters = 30; %iteration number
 gamma = 0.8; %feedback coefficient of HIO
-gpuFlag = 1; %use GPU or not
+gpuFlag = 0; %use GPU or not
 
 if ~exist('TM', 'var'); TM = generate_tm(M^2, N^2); end
 if ~gpuFlag && ~exist('TM_inv', 'var'); TM_inv = Tikinv(TM); end
@@ -24,17 +24,11 @@ end
 %% Target square region
 target = ones(M, M, 'single'); target(M/2-L/2:M/2+L/2-1, M/2-L/2:M/2+L/2-1) = 0; 
 
-Ein_zeroPha = exp(1i*zeros(N^2, 1, 'single')); 
-Iout_zeroPha = reshape(abs(TM * Ein_zeroPha).^2, M, M);
-I_target = target.*Iout_zeroPha; I_target_gpu = gpuArray(sqrt(I_target(:)));
-figure('color', 'w', 'position', [150 250 400 350]), imagesc(I_target), colormap('hot'), title('Target pattern'), pause(1)
-
 idxT = find(target==0); 
 idxB = find(target~=0);
-TR = ones(M, M, 'single'); TR(idxT) = 0; %target region
-BR = ones(M, M, 'single'); BR(idxB) = 0; %complementary to target region
-if gpuFlag; TR_gpu = gpuArray(TR(:)); end
 
+Ein_zeroPha = exp(1i*zeros(N^2, 1, 'single')); 
+Iout_zeroPha = reshape(abs(TM * Ein_zeroPha).^2, M, M);
 
 %% Alternate projection algorithm with ER and HIO constraints
 sigmaCurve_ER = zeros(iters, 1); sigmaCurve_HIO = zeros(iters, 1); %integrated intensty in target region
@@ -64,13 +58,13 @@ for i=1:iters
     end
      
     %speckle-domain constraint
-    I_cst(:, 1) = I(:, 1) .* TR_gpu;  % ER constraint 
+    I_cst(:, 1) = I(:, 1); I_cst(idxT, 1) = 0; % ER constraint 
     I_cst(:, 2) = I(:, 2); I_cst(idxT, 2) = I_previous_HIO(idxT) - gamma * I(idxT, 2); I_previous_HIO = I_cst(:, 2);  % HIO constraint
 
     %record
     if i > 1
-        Ih1 = abs(I(:, 1)).^2; sigmaCurve_ER(i) = gather(sum(gather(Ih1(idxT)))); etaCurve_ER(i) = gather(mean(Ih1(idxT))/mean(Ih1(idxB))); 
-        Ih2 = abs(I(:, 2)).^2; sigmaCurve_HIO(i) = gather(sum(gather(Ih2(idxT)))); etaCurve_HIO(i) = gather(mean(Ih2(idxT))/mean(Ih2(idxB))); 
+        Ih1 = abs(I(:, 1)).^2; sigmaCurve_ER(i) = gather(sum(Ih1(idxT))); etaCurve_ER(i) = gather(mean(Ih1(idxT))/mean(Ih1(idxB))); 
+        Ih2 = abs(I(:, 2)).^2; sigmaCurve_HIO(i) = gather(sum(Ih2(idxT))); etaCurve_HIO(i) = gather(mean(Ih2(idxT))/mean(Ih2(idxB))); 
     end
       
 end
@@ -112,4 +106,3 @@ set(gca,'FontSize',18, 'LineWidth', 2), xlabel('Iterations', 'fontsize', 24, 'Fo
 
 subplot(122), semilogy(1:iters, eta_zeroPha*ones(1, iters), 'k--', 1:iters, etaCurve_ER,  'b-', 1:iters, etaCurve_HIO, 'r-', 'LineWidth', 3); legend('Initial', 'ER', 'HIO', 'Fontname', 'Times New Roman');
 set(gca,'FontSize',18, 'LineWidth', 2), xlabel('Iterations', 'fontsize', 24, 'Fontname', 'Times New Roman'), ylabel('Suppression factor', 'fontsize', 24, 'Fontname', 'Times New Roman'); ylim([0 1.2*eta_zeroPha]);   
- 
