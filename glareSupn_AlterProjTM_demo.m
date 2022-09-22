@@ -1,18 +1,16 @@
-% An TM-based alternate projection algorithm for arbitrary glare suppression 
-% through scattering media, under phase-only modulation. 
+% An TM-based alternating projection algorithm with two types of speckle constraints (ER & HIO) 
+% for arbitrary glare suppression through scattering media, under phase-only modulation. 
 
 % Author: Shengfu Cheng
 % Date: July 08 2022
 
 close all
 
-
 %% Parameters
-N = 64; %size of phase mask 
+N = 32; %size of phase mask 
 M = 160; %size of speckle field
 L =  30; %side length of target square region
 iters = 30; %iteration number
-constrNum = 2; %two speckle-domain constraints (ER and HIO)
 gamma = 0.8; %feedback coefficient of HIO
 gpuFlag = 1; %use GPU or not
 
@@ -37,13 +35,14 @@ TR = ones(M, M, 'single'); TR(idxT) = 0; %target region
 BR = ones(M, M, 'single'); BR(idxB) = 0; %complementary to target region
 if gpuFlag; TR_gpu = gpuArray(TR(:)); end
 
-%% Alternate projection algorithm ER and HIO constraints
+
+%% Alternate projection algorithm with ER and HIO constraints
 sigmaCurve_ER = zeros(iters, 1); sigmaCurve_HIO = zeros(iters, 1); %integrated intensty in target region
 etaCurve_ER = zeros(iters, 1); etaCurve_HIO = zeros(iters, 1); %suppression factor
 
 tic
 
-I_cst = repelem(abs(TM * Ein_zeroPha).*exp(1i*2*pi*rand(M^2, 1)), 1, constrNum); %Initial speckle field
+I_cst = repmat(TM * Ein_zeroPha, 1, 2); %Initial speckle field
 I_previous_HIO = I_cst(:, 2); 
 
 Ih1 = abs(I_cst(:, 1)).^2; sigmaCurve_ER(1) = sum(gather(Ih1(idxT))); etaCurve_ER(1) = mean(Ih1(idxT))/mean(Ih1(idxB)); 
@@ -63,16 +62,16 @@ for i=1:iters
     else
         I = TM * A_pha; 
     end
-    
-    %record
-    if i> 1
-        Ih1 = abs(I(:, 1)).^2; sigmaCurve_ER(i) = gather(sum(gather(Ih1(idxT)))); etaCurve_ER(i) = gather(mean(Ih1(idxT))/mean(Ih1(idxB))); 
-        Ih2 = abs(I(:, 2)).^2; sigmaCurve_HIO(i) = gather(sum(gather(Ih2(idxT)))); etaCurve_HIO(i) = gather(mean(Ih2(idxT))/mean(Ih2(idxB))); 
-    end
-    
+     
     %speckle-domain constraint
     I_cst(:, 1) = I(:, 1) .* TR_gpu;  % ER constraint 
     I_cst(:, 2) = I(:, 2); I_cst(idxT, 2) = I_previous_HIO(idxT) - gamma * I(idxT, 2); I_previous_HIO = I_cst(:, 2);  % HIO constraint
+
+    %record
+    if i > 1
+        Ih1 = abs(I(:, 1)).^2; sigmaCurve_ER(i) = gather(sum(gather(Ih1(idxT)))); etaCurve_ER(i) = gather(mean(Ih1(idxT))/mean(Ih1(idxB))); 
+        Ih2 = abs(I(:, 2)).^2; sigmaCurve_HIO(i) = gather(sum(gather(Ih2(idxT)))); etaCurve_HIO(i) = gather(mean(Ih2(idxT))/mean(Ih2(idxB))); 
+    end
       
 end
 
