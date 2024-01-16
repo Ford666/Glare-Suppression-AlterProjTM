@@ -3,6 +3,7 @@ function TM = generate_tm(M, N)
     %generates a Transmission Matrix (TM) of a scattering medium
     % M: height of the TM
     % N: weight of the TM
+    % Adapted from https://github.com/comediaLKB/NMF_PR/blob/master/generate_tm.m
       
     sz_grains = 4;   %size of a single speckle grain
     if mod(ceil(sqrt(M) / sz_grains), 2) == 0
