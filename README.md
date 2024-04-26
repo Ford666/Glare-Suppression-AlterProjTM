@@ -14,7 +14,7 @@ This repository stores the simulation codes for our recently published work "[Al
 
 ## Citation
 If you think the codes are helpful for your research, please consider to cite our work:
-
+```
 @article{CHENG2023107368,
 title = {Alternating projection-based phase optimization for arbitrary glare suppression through multimode fiber},
 journal = {Optics and Lasers in Engineering},
@@ -26,3 +26,4 @@ doi = {https://doi.org/10.1016/j.optlaseng.2022.107368},
 url = {https://www.sciencedirect.com/science/article/pii/S0143816622004195},
 author = {Shengfu Cheng and Tianting Zhong and Chi Man Woo and Puxiang Lai},
 }
+```
